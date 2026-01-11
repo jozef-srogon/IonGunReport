@@ -5,7 +5,6 @@ from reportlab.lib.units import mm
 from reportlab.lib.styles import getSampleStyleSheet
 from PIL import Image as PILImage
 
-
 def export_images_to_pdf(images, output_dir):
     pdf_path = os.path.join(output_dir, "Ion_gun_maps.pdf")
     doc = SimpleDocTemplate(pdf_path, pagesize=A4)
