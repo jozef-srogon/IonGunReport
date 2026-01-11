@@ -1,0 +1,9 @@
+from app.gui import App
+import customtkinter as ctk
+
+ctk.set_appearance_mode("dark")
+ctk.set_default_color_theme("dark-blue")  # or keep default
+
+if __name__ == "__main__":
+    app = App()
+    app.mainloop()

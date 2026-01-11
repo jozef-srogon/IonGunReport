@@ -1,0 +1,18 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Background -->
+  <rect x="2" y="2" width="60" height="60" rx="8" fill="#2B2B2B"/>
+
+  <!-- Simulated glow using a blurred circle behind -->
+  <circle cx="32" cy="32" r="22" fill="#EDEDED" opacity="0.25"/>
+
+  <!-- Circle outline -->
+  <circle cx="32" cy="32" r="18" fill="none" stroke="#EDEDED" stroke-width="3"/>
+
+  <!-- Dot of the "i" -->
+  <circle cx="32" cy="24" r="2.5" fill="#EDEDED"/>
+
+  <!-- Stem of the "i" -->
+  <rect x="29.5" y="29" width="5" height="15" rx="2.5" fill="#EDEDED"/>
+  
+</svg>
