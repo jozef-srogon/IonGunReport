@@ -5,10 +5,10 @@ from reportlab.lib.pagesizes import landscape, A3
 from reportlab.lib import colors
 from tkinter import messagebox
 
-from app.rules import (get_rules_for, RATIO_RANGE_NEXSA, RATIO_RANGE_ESCALAB, SHIFT_RANGE)
+from app.rules import (get_rules_for, RATIO_RANGE_NEXSA, RATIO_RANGE_ESCALAB, SHIFT_RANGE, RATIO_RANGE_SPEC)
 from app.validation import (validate_row, in_range, apply_red)
 
-def export_txt_to_pdf(system, output_dir, system_var: bool, ionGun_var: bool, isISS: bool):
+def export_txt_to_pdf(system, output_dir, system_var: bool, ionGun_var: bool, isISS: bool, isOE:bool):
     pdf_path = os.path.join(output_dir, "BestModeData_V3.pdf")
     pdf = SimpleDocTemplate(pdf_path, pagesize=landscape(A3))
     wrong_modes: List[Tuple[str, str]] = []
@@ -29,7 +29,7 @@ def export_txt_to_pdf(system, output_dir, system_var: bool, ionGun_var: bool, is
     def _build_table_data():
         headers1 = [
             "Date and Time", "", "Ion Energy", "", "Electron Energy", "", "Fil",
-            "Extractor", "Condensor", "Drift", "Magnet", "Focus", "X Shift", "Y Shift", "Ratio",
+            "Extractor", "Condenser", "Drift", "Magnet", "Focus", "X Shift", "Y Shift", "Ratio",
             "Sample Current", "", "", "Mode Type", "Passed Specification"
         ]
         headers2 = [
@@ -104,10 +104,12 @@ def export_txt_to_pdf(system, output_dir, system_var: bool, ionGun_var: bool, is
         "specification": 19
     }
 
-    apply_red_local = apply_red
+    apply_red_local = apply_red if not isOE else (lambda *args, **kwargs: None)
     in_range_local = in_range
     ratio_range = RATIO_RANGE_NEXSA if system_var else RATIO_RANGE_ESCALAB
+    ratio_range_spec = RATIO_RANGE_SPEC
     shift_range = SHIFT_RANGE
+    
 
     for row, m in enumerate(system.results, start=2):
         idx_str = str(m.index)
@@ -117,8 +119,10 @@ def export_txt_to_pdf(system, output_dir, system_var: bool, ionGun_var: bool, is
             if col is not None:
                 apply_red_local(style, col, row)
                 wrong_modes.append((m.index, param))
-
-        if not in_range_local(m.ratio, *ratio_range):
+        if m.specification == "OK" and not in_range_local(m.ratio, *ratio_range_spec):
+            apply_red_local(style, param_col_index["ratio"], row)
+            wrong_modes.append([m.index, "ratio"])
+        elif not in_range_local(m.ratio, *ratio_range): 
             apply_red_local(style, param_col_index["ratio"], row)
             wrong_modes.append([m.index, "ratio"])
 

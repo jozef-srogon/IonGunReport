@@ -21,7 +21,7 @@ def resource_path(relative_path):
 
 class App(ctk.CTk):
     BG_COLOR = "#2B2B2B"   
-    BG_COLOR_HOVER = "#5E5D5D"
+    BG_COLOR_HOVER ="#5E5D5D"
     
     def __init__(self):
         super().__init__()
@@ -38,6 +38,7 @@ class App(ctk.CTk):
         self.system_var = ctk.BooleanVar(value=False)  # False = Escalab, True = Nexsa
         self.ionGun_var = ctk.BooleanVar(value=False)  # MAGCIS / EX06
         self.ISS_modes = ctk.BooleanVar(value=False)   # ISS modes for Nexsa
+        self.oe_access = ctk.BooleanVar(value=False)   
 
         self._load_images()
         self._create_background()
@@ -70,62 +71,36 @@ class App(ctk.CTk):
         self.bg_label.lower()
 
     def _create_title_area(self):
-        title_frame = ctk.CTkFrame(self, fg_color=self.BG_COLOR)
-        title_frame.pack(pady=5, fill="x")
-
-        title_inner = ctk.CTkFrame(title_frame, fg_color=self.BG_COLOR)
-        title_inner.pack()
+        TITLE_HEIGHT = 36
+        title_frame = ctk.CTkFrame(
+            self,
+            fg_color=self.BG_COLOR,
+            height=TITLE_HEIGHT
+        )
+        title_frame.pack(fill="x", pady=(5, 0))
+        title_frame.pack_propagate(False)
 
         self.label = ctk.CTkLabel(
-            title_inner,
+            title_frame,
             text="Convert to PDF",
             font=ctk.CTkFont(size=16, weight="bold"),
             text_color="white",
             fg_color=self.BG_COLOR
         )
-        self.label.pack(side="left")
+        self.label.place(relx=0.5, rely=0.5, anchor="center")
 
         self.info_button = ctk.CTkButton(
-            title_inner,
+            title_frame,
             image=self.icon_normal,
             text="",
-            width=24,
-            height=24,
+            width=20,
+            height=20,
             fg_color=self.BG_COLOR,
             hover_color=self.BG_COLOR,
             command=lambda: None
         )
-        self.info_button.pack(side="left", padx=(5, 0))
-        self.info_button.bind("<Enter>", self._on_info_hover)
-        self.info_button.bind("<Leave>", self._on_info_leave)
+        self.info_button.place(relx=0.5, rely=0.5, anchor="w", x=55)
 
-    def _create_title_area(self):
-        title_frame = ctk.CTkFrame(self, fg_color=self.BG_COLOR)
-        title_frame.pack(pady=5, fill="x")
-
-        title_inner = ctk.CTkFrame(title_frame, fg_color=self.BG_COLOR)
-        title_inner.pack()
-
-        self.label = ctk.CTkLabel(
-            title_inner,
-            text="Convert to PDF",
-            font=ctk.CTkFont(size=16, weight="bold"),
-            text_color="white",
-            fg_color=self.BG_COLOR
-        )
-        self.label.pack(side="left")
-
-        self.info_button = ctk.CTkButton(
-            title_inner,
-            image=self.icon_normal,
-            text="",
-            width=24,
-            height=24,
-            fg_color=self.BG_COLOR,
-            hover_color=self.BG_COLOR,
-            command=lambda: None
-        )
-        self.info_button.pack(side="left", padx=(5, 0))
         self.info_button.bind("<Enter>", self._on_info_hover)
         self.info_button.bind("<Leave>", self._on_info_leave)
 
@@ -202,6 +177,7 @@ class App(ctk.CTk):
         self.import_folder_path = ""
         self.ionGun_var = ctk.BooleanVar(value=False)  # MAGCIS / EX06
         self.ISS_modes = ctk.BooleanVar(value=False)   # ISS modes for Nexsa
+        self.oe_access.set(False)
 
         try:
             default_folder = "C:/AvantageSystem/RampLogs/IonGun"
@@ -246,8 +222,9 @@ class App(ctk.CTk):
                 for line in f:
                     line = line.strip()
                     if not line:
-                        continue
-
+                        continue                 
+                    if line == "isolemnlyswearthatiamuptonogood" or line == "slavnostneprisahamzejsempripravenkekazdespatnosti" or line == "slavnostneprisahamzenemamzalubomnicdobre":
+                        self.oe_access.set(True)
                     if line.startswith("Date"):
                         self.system = System(line)
                     else:
@@ -290,7 +267,7 @@ class App(ctk.CTk):
                             )
                         )
 
-            wrong_modes = export_txt_to_pdf(self.system, self.import_folder_path, self.system_var.get(), self.ionGun_var.get(), self.ISS_modes.get())
+            wrong_modes = export_txt_to_pdf(self.system, self.import_folder_path, self.system_var.get(), self.ionGun_var.get(), self.ISS_modes.get(), self.oe_access.get())
             if wrong_modes is None:
                 return False
             elif wrong_modes != []:
@@ -305,41 +282,48 @@ class App(ctk.CTk):
 
         return True
 
+    ORIGINAL_DESIGN_WIDTH = 892
+    ORIGINAL_DESIGN_HEIGHT = 501
+ 
+    def on_click(self, event):
+        try:
+            scaling = self._get_window_scaling()
+        except AttributeError:
+            scaling = ctk.ThemeManager.theme["scaling"] if "scaling" in ctk.ThemeManager.theme else 1.0
+        cur_x = event.x / scaling
+        cur_y = event.y / scaling
+
+        widget_w = event.widget.winfo_width() / scaling
+        widget_h = event.widget.winfo_height() / scaling
+        img_w = 892
+        img_h = 501
+        offset_x = (widget_w - img_w) / 2
+        offset_y = (widget_h - img_h) / 2
+ 
+        if not (offset_x <= cur_x <= offset_x + img_w and 
+                offset_y <= cur_y <= offset_y + img_h):
+            return
+ 
+        virtual_x = cur_x - offset_x
+        virtual_y = cur_y - offset_y
+        poly_left = [(0, 501), (369, 501), (468, 0), (0, 0)]
+        poly_right = [(369, 501), (892, 501), (892, 0), (468, 0)]
+ 
+        if self.point_in_polygon(virtual_x, virtual_y, poly_left):
+            self.system_var.set(False)
+            self.bg_label.configure(image=self.bg_escalab_img)
+        elif self.point_in_polygon(virtual_x, virtual_y, poly_right):
+            self.system_var.set(True)
+            self.bg_label.configure(image=self.bg_nexsa_img)
+  
     def point_in_polygon(self, x, y, poly):
         inside = False
         n = len(poly)
-    
         for i in range(n):
             x1, y1 = poly[i]
             x2, y2 = poly[(i + 1) % n]
-    
             if ((y1 > y) != (y2 > y)):
                 xinters = (y - y1) * (x2 - x1) / (y2 - y1) + x1
                 if x < xinters:
                     inside = not inside
-    
         return inside
-
-    def on_click(self, event):
-        x, y = event.x, event.y
-
-        poly_left = [
-            (60, 55), #A
-            (1130, 55), #B
-            (880, 1250), #C
-            (60, 1250) #D
-        ]
-        
-        poly_right = [
-            (1135, 55), #E
-            (2200, 55), #F
-            (2200, 1250), #G
-            (900, 1250) #H
-        ]
-
-        if self.point_in_polygon(x, y, poly_left):
-            self.system_var.set(False)
-            self.bg_label.configure(image=self.bg_escalab_img)
-        elif self.point_in_polygon(x, y, poly_right):
-            self.system_var.set(True)
-            self.bg_label.configure(image=self.bg_nexsa_img)
