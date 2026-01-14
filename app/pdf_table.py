@@ -8,24 +8,23 @@ from tkinter import messagebox
 from app.rules import (get_rules_for, RATIO_RANGE_NEXSA, RATIO_RANGE_ESCALAB, SHIFT_RANGE, RATIO_RANGE_SPEC)
 from app.validation import (validate_row, in_range, apply_red)
 
+def get_system_type(system_var, ionGun_var, isISS):
+    SYSTEM_TYPE_MAP = {
+        (True,  True,  True):  "NEXSA_MAGCIS_ISS",
+        (True,  True,  False): "NEXSA_MAGCIS",
+        (True,  False, True):  "NEXSA_EX06_ISS",
+        (True,  False, False): "EX06",
+        (False, True,  False): "ESQ_MAGCIS",
+        (False, False, False): "EX06",
+    }
+    key = (system_var, ionGun_var, isISS)
+    return SYSTEM_TYPE_MAP.get(key, "")
+
 def export_txt_to_pdf(system, output_dir, system_var: bool, ionGun_var: bool, isISS: bool, isOE:bool):
     pdf_path = os.path.join(output_dir, "BestModeData_V3.pdf")
     pdf = SimpleDocTemplate(pdf_path, pagesize=landscape(A3))
     wrong_modes: List[Tuple[str, str]] = []
 
-    def _get_system_type() -> str:
-        SYSTEM_TYPE_MAP = {
-            (True,  True,  True):  "NEXSA_MAGCIS_ISS",
-            (True,  True,  False): "NEXSA_MAGCIS",
-            (True,  False, True):  "NEXSA_EX06_ISS",
-            (True,  False, False): "EX06",
-            (False, True,  False): "ESQ_MAGCIS",
-            (False, False, False): "EX06",
-        }
-        key = (system_var, ionGun_var, isISS)
-        return SYSTEM_TYPE_MAP.get(key, "")
-    
-    
     def _build_table_data():
         headers1 = [
             "Date and Time", "", "Ion Energy", "", "Electron Energy", "", "Fil",
@@ -82,16 +81,16 @@ def export_txt_to_pdf(system, output_dir, system_var: bool, ionGun_var: bool, is
     table = Table(table_data)
     style = _make_table_style()
 
-    system_type = _get_system_type()
+    system_type = get_system_type(system_var, ionGun_var, isISS)
     if not system_type:
         messagebox.showerror("Error", "Select correct system")
-        return []
+        return None
 
     try:
         rules = get_rules_for(system_name=system_type, preset="default")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to load rules for {system_type}: {e}")
-        return []
+        return None
 
     param_col_index = {
         "extractor": 7,
@@ -114,31 +113,28 @@ def export_txt_to_pdf(system, output_dir, system_var: bool, ionGun_var: bool, is
     for row, m in enumerate(system.results, start=2):
         idx_str = str(m.index)
 
-        for param in validate_row(m, rules):
+        for param, rng in validate_row(m, rules):
             col = param_col_index.get(param)
             if col is not None:
                 apply_red_local(style, col, row)
-                wrong_modes.append((m.index, param))
+                wrong_modes.append([m.index, param, rng])
         if m.specification == "OK" and not in_range_local(m.ratio, *ratio_range_spec):
             apply_red_local(style, param_col_index["ratio"], row)
-            wrong_modes.append([m.index, "ratio"])
+            wrong_modes.append([m.index, "ratio", ratio_range_spec])
         elif not in_range_local(m.ratio, *ratio_range): 
             apply_red_local(style, param_col_index["ratio"], row)
-            wrong_modes.append([m.index, "ratio"])
-
+            wrong_modes.append([m.index, "ratio", ratio_range])
         if not in_range_local(m.X_shift, *shift_range):
             apply_red_local(style, param_col_index["Xshift"], row)
-            wrong_modes.append([m.index, "Xshift"])
-
+            wrong_modes.append([m.index, "Xshift", shift_range])
+            print(str(shift_range))
         if not in_range_local(m.Y_shift, *shift_range):
             apply_red_local(style, param_col_index["Yshift"], row)
-            wrong_modes.append([m.index, "Yshift"])
-
+            wrong_modes.append([m.index, "Yshift", shift_range])
         if m.specification and str(m.specification).strip().upper() != "OK":
             apply_red_local(style, param_col_index["specification"], row)
-            wrong_modes.append([m.index, "specification"])
+            wrong_modes.append([m.index, "specification", ''])
 
-    
     table.setStyle(style)
     try:
         pdf.build([table])

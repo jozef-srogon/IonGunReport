@@ -26,5 +26,6 @@ def validate_row(m, rules):
         value = getattr(m, param, None)
 
         if not in_range(value, min_v, max_v):
-            issues.append(param)
+            issues.append((param, (min_v, max_v)))
+
     return issues

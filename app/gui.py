@@ -10,7 +10,7 @@ from models.measurement import Measurement
 from models.image import Image
 
 from app.pdf_images import export_images_to_pdf
-from app.pdf_table import export_txt_to_pdf
+from app.pdf_table import export_txt_to_pdf, get_system_type
 
 def resource_path(relative_path):
     try:
@@ -85,7 +85,7 @@ class App(ctk.CTk):
             text="Convert to PDF",
             font=ctk.CTkFont(size=16, weight="bold"),
             text_color="white",
-            fg_color=self.BG_COLOR
+            fg_color="transparent" #fg_color=self.BG_COLOR
         )
         self.label.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -154,6 +154,17 @@ class App(ctk.CTk):
         )
         self.open_button.pack_forget()
 
+        self.default_data_button = ctk.CTkButton(
+            button_frame,
+            text="Show default values",
+            hover_color=self.BG_COLOR_HOVER,
+            fg_color="#3A3A3A",
+            command=self.open_default_data,
+            corner_radius=3,
+            width=100
+        )
+        self.default_data_button.pack_forget()
+
     def _on_info_hover(self, event):
         self.info_button.configure(image=self.icon_hover)
         x = self.info_button.winfo_rootx() + self.info_button.winfo_width() + 6
@@ -199,6 +210,7 @@ class App(ctk.CTk):
                 if self.process_file(txt_path):
                     self.open_folder()
                     self.open_button.pack(side="left", padx=5)
+                    self.default_data_button.pack(side="left", padx=5)
             else:
                 messagebox.showwarning("Warning", "Best Mode Data file not found.")
 
@@ -327,3 +339,24 @@ class App(ctk.CTk):
                 if x < xinters:
                     inside = not inside
         return inside
+
+    def open_default_data(self):
+        try:
+            systemType = get_system_type(self.system_var.get(), self.ionGun_var.get(), self.ISS_modes.get())
+            print(systemType)
+            pdf_path = resource_path(f"assets/{systemType}.pdf")
+
+            if not os.path.isfile(pdf_path):
+                messagebox.showerror(
+                    "File not found",
+                    "Default values PDF could not be found."
+                )
+                return
+            
+            os.startfile(pdf_path)
+
+        except Exception as e:
+            messagebox.showerror(
+                "Error",
+                f"Could not open the PDF file:\n{e}"
+            )
