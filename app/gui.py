@@ -1,5 +1,5 @@
 import os
-import sys
+
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
 from charset_normalizer import from_path
@@ -10,14 +10,9 @@ from models.measurement import Measurement
 from models.image import Image
 
 from app.pdf_images import export_images_to_pdf
-from app.pdf_table import export_txt_to_pdf, get_system_type
-
-def resource_path(relative_path):
-    try:
-        base_path = sys._MEIPASS
-    except AttributeError:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
+from app.pdf_table import export_txt_to_pdf
+from app.resourcePath import resource_path
+from app.systemConfig import get_system_config
 
 class App(ctk.CTk):
     BG_COLOR = "#2B2B2B"   
@@ -30,7 +25,7 @@ class App(ctk.CTk):
         self.geometry("1000x700")
         self.title("Ion Gun data converter")
 
-        self.iconbitmap(resource_path("assets/app_icon.ico"))
+        self.iconbitmap(resource_path("assets/new_icon3.ico"))
 
         self.system = []
         self.images = []
@@ -85,7 +80,7 @@ class App(ctk.CTk):
             text="Convert to PDF",
             font=ctk.CTkFont(size=16, weight="bold"),
             text_color="white",
-            fg_color="transparent" #fg_color=self.BG_COLOR
+            fg_color=self.BG_COLOR
         )
         self.label.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -244,11 +239,34 @@ class App(ctk.CTk):
                         if len(parts) < 21:
                             continue
 
-                        if parts[20] == "ISS":
+                        if parts[0] in ("[14]", "[20]", "[26]", "[32]") and parts[3] == "75":
                             self.ISS_modes.set(True)
-                        else:
-                            pass
-                        if parts[20] == "Cluster":
+                            self.ionGun_var.set(False)
+                        elif parts[0] in ("[15]", "[21]", "[27]", "[33]") and parts[3] == "150":
+                            self.ISS_modes.set(True)
+                            self.ionGun_var.set(False)
+                        elif parts[0] in ("[16]", "[22]", "[28]", "[34]") and parts[3] == "300":
+                            self.ISS_modes.set(True)
+                            self.ionGun_var.set(False)
+                        elif parts[0] in ("[17]", "[23]", "[29]", "[35]") and parts[3] == "500":
+                            self.ISS_modes.set(True)
+                            self.ionGun_var.set(False)
+                        elif parts[0] in  ("[18]", "[24]", "[30]", "[36]") and parts[3] == "1000":
+                            self.ISS_modes.set(True)
+                            self.ionGun_var.set(False)
+                        elif parts[0] in  ("[19]", "[25]", "[31]", "[37]") and parts[3] == "2000":
+                            self.ionGun_var.set(False)
+                            self.ISS_modes.set(True)                     
+
+                        if parts[9] != "0" and parts[12] != "0":
+                            self.ionGun_var.set(False) #EX06
+                        
+                        if parts[3] == "Med":
+                            self.ionGun_var.set(False) #EX06
+
+                        elif parts[20] == "ISS":
+                            self.ISS_modes.set(True)
+                        elif parts[20] == "Cluster":
                             self.ionGun_var.set(True)
                         else:
                             pass
@@ -342,7 +360,7 @@ class App(ctk.CTk):
 
     def open_default_data(self):
         try:
-            systemType = get_system_type(self.system_var.get(), self.ionGun_var.get(), self.ISS_modes.get())
+            systemType = get_system_config(self.system_var.get(), self.ionGun_var.get(), self.ISS_modes.get())["type"]
             print(systemType)
             pdf_path = resource_path(f"assets/{systemType}.pdf")
 

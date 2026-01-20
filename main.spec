@@ -31,7 +31,7 @@ exe = EXE(
     a.datas,
     [],
     name="IonGunDataConverter",
-    icon="assets/app_icon.ico",
+    icon="assets/new_icon3.ico",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

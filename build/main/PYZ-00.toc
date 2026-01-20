@@ -283,13 +283,25 @@
    'C:\\Users\\jozef.srogon\\OneDrive - Thermo Fisher '
    'Scientific\\Desktop\\IonGunConvert\\app\\pdf_table.py',
    'PYMODULE'),
+  ('app.resourcePath',
+   'C:\\Users\\jozef.srogon\\OneDrive - Thermo Fisher '
+   'Scientific\\Desktop\\IonGunConvert\\app\\resourcePath.py',
+   'PYMODULE'),
   ('app.rules',
    'C:\\Users\\jozef.srogon\\OneDrive - Thermo Fisher '
    'Scientific\\Desktop\\IonGunConvert\\app\\rules.py',
    'PYMODULE'),
+  ('app.systemConfig',
+   'C:\\Users\\jozef.srogon\\OneDrive - Thermo Fisher '
+   'Scientific\\Desktop\\IonGunConvert\\app\\systemConfig.py',
+   'PYMODULE'),
   ('app.validation',
    'C:\\Users\\jozef.srogon\\OneDrive - Thermo Fisher '
    'Scientific\\Desktop\\IonGunConvert\\app\\validation.py',
+   'PYMODULE'),
+  ('app.watermark',
+   'C:\\Users\\jozef.srogon\\OneDrive - Thermo Fisher '
+   'Scientific\\Desktop\\IonGunConvert\\app\\watermark.py',
    'PYMODULE'),
   ('argparse',
    'C:\\Users\\jozef.srogon\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\argparse.py',

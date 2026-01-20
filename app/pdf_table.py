@@ -7,23 +7,43 @@ from tkinter import messagebox
 
 from app.rules import (get_rules_for, RATIO_RANGE_NEXSA, RATIO_RANGE_ESCALAB, SHIFT_RANGE, RATIO_RANGE_SPEC)
 from app.validation import (validate_row, in_range, apply_red)
-
-def get_system_type(system_var, ionGun_var, isISS):
-    SYSTEM_TYPE_MAP = {
-        (True,  True,  True):  "NEXSA_MAGCIS_ISS",
-        (True,  True,  False): "NEXSA_MAGCIS",
-        (True,  False, True):  "NEXSA_EX06_ISS",
-        (True,  False, False): "EX06",
-        (False, True,  False): "ESQ_MAGCIS",
-        (False, False, False): "EX06",
-    }
-    key = (system_var, ionGun_var, isISS)
-    return SYSTEM_TYPE_MAP.get(key, "")
+from app.resourcePath import resource_path
+from app.systemConfig import get_system_config
+from app.watermark import draw_image_watermark
 
 def export_txt_to_pdf(system, output_dir, system_var: bool, ionGun_var: bool, isISS: bool, isOE:bool):
     pdf_path = os.path.join(output_dir, "BestModeData_V3.pdf")
-    pdf = SimpleDocTemplate(pdf_path, pagesize=landscape(A3))
+    pdf = SimpleDocTemplate(pdf_path, pagesize=landscape(A3), topMargin=30)
     wrong_modes: List[Tuple[str, str]] = []
+
+    param_col_index = {
+        "extractor": 7,
+        "condensor": 8,
+        "drift": 9,
+        "magnet": 10,
+        "Xshift": 12,
+        "Yshift": 13,
+        "ratio": 14,
+        "specification": 19
+    }
+
+    apply_red_local = apply_red if not isOE else (lambda *args, **kwargs: None)
+    in_range_local = in_range
+    ratio_range = RATIO_RANGE_NEXSA if system_var else RATIO_RANGE_ESCALAB
+    ratio_range_spec = RATIO_RANGE_SPEC
+    shift_range = SHIFT_RANGE
+
+    cfg = get_system_config(system_var, ionGun_var, isISS)
+    
+    if not cfg:
+        messagebox.showerror("Error", "Select correct system")
+        return None
+    
+    max_i = cfg["rows"]
+    system_type = cfg["system"]
+
+    results_sorted = sorted(system.results, key=lambda m: int(str(m.index).strip("[]")))
+    sorted_by_idx = {int(str(m.index).strip("[]")): m for m in results_sorted}
 
     def _build_table_data():
         headers1 = [
@@ -38,17 +58,22 @@ def export_txt_to_pdf(system, output_dir, system_var: bool, ionGun_var: bool, is
         ]
         data = [headers1, headers2]
 
-        for m in system.results:
-            data.append([
-                f"{m.index} {m.date}", m.setup,
-                m.ion_energy_eV, m.ion_energy_uA,
-                m.electron_energy_eV, m.electron_energy_mA,
-                m.fil, m.extractor, m.condensor,
-                m.drift, m.magnet, m.focus,
-                m.X_shift, m.Y_shift, m.ratio,
-                m.sample_current_work, m.sample_current_max,
-                m.sample_current_aim, m.mode, m.specification
-            ])
+        for i in range(max_i + 1):
+            m = sorted_by_idx.get(i)
+            if m is None:
+                data.append(_empty_row_for_index())
+            else:
+                data.append([
+                    f"{m.index} {m.date}", m.setup,
+                    m.ion_energy_eV, m.ion_energy_uA,
+                    m.electron_energy_eV, m.electron_energy_mA,
+                    m.fil, m.extractor, m.condensor,
+                    m.drift, m.magnet, m.focus,
+                    m.X_shift, m.Y_shift, m.ratio,
+                    m.sample_current_work, m.sample_current_max,
+                    m.sample_current_aim, m.mode, m.specification
+                ])
+
         return data
 
     def _make_table_style(font_size: int = 9) -> TableStyle:
@@ -78,13 +103,9 @@ def export_txt_to_pdf(system, output_dir, system_var: bool, ionGun_var: bool, is
         return TableStyle(style_cmds)
 
     table_data = _build_table_data()
+   
     table = Table(table_data)
     style = _make_table_style()
-
-    system_type = get_system_type(system_var, ionGun_var, isISS)
-    if not system_type:
-        messagebox.showerror("Error", "Select correct system")
-        return None
 
     try:
         rules = get_rules_for(system_name=system_type, preset="default")
@@ -92,26 +113,12 @@ def export_txt_to_pdf(system, output_dir, system_var: bool, ionGun_var: bool, is
         messagebox.showerror("Error", f"Failed to load rules for {system_type}: {e}")
         return None
 
-    param_col_index = {
-        "extractor": 7,
-        "condensor": 8,
-        "drift": 9,
-        "magnet": 10,
-        "Xshift": 12,
-        "Yshift": 13,
-        "ratio": 14,
-        "specification": 19
-    }
-
-    apply_red_local = apply_red if not isOE else (lambda *args, **kwargs: None)
-    in_range_local = in_range
-    ratio_range = RATIO_RANGE_NEXSA if system_var else RATIO_RANGE_ESCALAB
-    ratio_range_spec = RATIO_RANGE_SPEC
-    shift_range = SHIFT_RANGE
-    
-
-    for row, m in enumerate(system.results, start=2):
-        idx_str = str(m.index)
+    row = 2
+    for i in range(max_i + 1):
+        m = sorted_by_idx.get(i)
+        if m is None:
+            row += 1
+            continue
 
         for param, rng in validate_row(m, rules):
             col = param_col_index.get(param)
@@ -127,7 +134,6 @@ def export_txt_to_pdf(system, output_dir, system_var: bool, ionGun_var: bool, is
         if not in_range_local(m.X_shift, *shift_range):
             apply_red_local(style, param_col_index["Xshift"], row)
             wrong_modes.append([m.index, "Xshift", shift_range])
-            print(str(shift_range))
         if not in_range_local(m.Y_shift, *shift_range):
             apply_red_local(style, param_col_index["Yshift"], row)
             wrong_modes.append([m.index, "Yshift", shift_range])
@@ -135,9 +141,16 @@ def export_txt_to_pdf(system, output_dir, system_var: bool, ionGun_var: bool, is
             apply_red_local(style, param_col_index["specification"], row)
             wrong_modes.append([m.index, "specification", ''])
 
+        row += 1
+
     table.setStyle(style)
     try:
-        pdf.build([table])
+        watermark_path = resource_path(f"assets/{system_type}.jpg")
+        pdf.build([
+            table
+            ],
+            onFirstPage=lambda c, d: draw_image_watermark(c, d, watermark_path),
+            onLaterPages=lambda c, d: draw_image_watermark(c, d, watermark_path))
     except Exception as e:
         messagebox.showerror(
             "Permission denied",
@@ -147,3 +160,6 @@ def export_txt_to_pdf(system, output_dir, system_var: bool, ionGun_var: bool, is
         return None
     
     return wrong_modes
+
+def _empty_row_for_index():
+    return ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
