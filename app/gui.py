@@ -58,9 +58,10 @@ class App(ctk.CTk):
         self.after(2000, self.start_update_check)
 
     def start_update_check(self):
+        # run the update check in a background thread so UI stays responsive
         threading.Thread(
             target=check_latest,
-            kwargs={"parent": self},
+            kwargs={"parent": self},  # pass parent for messagebox centering
             daemon=True
         ).start()
 
