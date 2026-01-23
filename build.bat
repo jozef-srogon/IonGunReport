@@ -10,6 +10,7 @@ for /f "tokens=2 delims== " %%v in ('findstr "__version__" app\version.py') do s
 set APP_VERSION=%APP_VERSION:"=%
 
 echo %APP_VERSION% > VERSION
+echo   Version: %APP_VERSION%
 
 echo.
 echo ===============================
