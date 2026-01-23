@@ -31,21 +31,15 @@ def fetch_latest_version(timeout: float = 5.0) -> Optional[str]:
     return None
 
 def check_latest(parent=None, show_if_same: bool = False):
-    """
-    Check for a newer version and notify the user.
-    Safe to call from a background thread.
 
-    - parent: optional Tkinter parent window (used to schedule messagebox on UI thread)
-    - show_if_same: if True, still notify the user that they are on latest
-    """
     latest = fetch_latest_version()
     if not latest:
         return  # couldn't fetch / parse
 
     current = get_version()
+    print("current version: ", current)
+    print("latest version: ", latest)
 
-    # quick equality check (string equality). For semver-aware comparison,
-    # implement proper version parsing (packaging.version or distutils.version).
     if latest == current:
         if show_if_same and parent:
             parent.after(0, lambda: __show_msg(parent, "Up to date",
