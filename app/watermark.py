@@ -1,6 +1,6 @@
 from reportlab.lib.utils import ImageReader
 
-def draw_image_watermark(canvas, doc, image_path, opacity=0.15):
+def draw_image_watermark(canvas, doc, image_path, opacity=0.30):
     canvas.saveState()
     try:
         canvas.setFillAlpha(opacity)

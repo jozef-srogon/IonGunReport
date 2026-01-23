@@ -271,6 +271,10 @@
    'C:\\Users\\jozef.srogon\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\_threading_local.py',
    'PYMODULE'),
   ('app', '-', 'PYMODULE'),
+  ('app.functions',
+   'C:\\Users\\jozef.srogon\\OneDrive - Thermo Fisher '
+   'Scientific\\Desktop\\IonGunConvert\\app\\functions.py',
+   'PYMODULE'),
   ('app.gui',
    'C:\\Users\\jozef.srogon\\OneDrive - Thermo Fisher '
    'Scientific\\Desktop\\IonGunConvert\\app\\gui.py',
@@ -282,10 +286,6 @@
   ('app.pdf_table',
    'C:\\Users\\jozef.srogon\\OneDrive - Thermo Fisher '
    'Scientific\\Desktop\\IonGunConvert\\app\\pdf_table.py',
-   'PYMODULE'),
-  ('app.resourcePath',
-   'C:\\Users\\jozef.srogon\\OneDrive - Thermo Fisher '
-   'Scientific\\Desktop\\IonGunConvert\\app\\resourcePath.py',
    'PYMODULE'),
   ('app.rules',
    'C:\\Users\\jozef.srogon\\OneDrive - Thermo Fisher '

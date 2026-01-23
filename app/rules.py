@@ -126,5 +126,5 @@ def get_rules_for(system_name, preset="default"):
 
     return {
         param: expand_groups(preset_data.get(param, {}))
-        for param in ("extractor", "condensor", "drift", "magnet")
+        for param in ("extractor", "drift", "magnet")
     }

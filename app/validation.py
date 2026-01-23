@@ -1,5 +1,3 @@
-from reportlab.lib import colors
-
 def to_float(value):
     try:
         return float(value)
@@ -11,8 +9,9 @@ def in_range(value, min_v, max_v):
     return val is not None and min_v <= val <= max_v
 
 def apply_red(style, col, row):
-    style.add('TEXTCOLOR', (col, row), (col, row), colors.red)
-    style.add('FONTNAME', (col, row), (col, row), 'Helvetica-Bold')
+    style.add('BACKGROUND', (col, row), (col, row), "#B71C1C")
+    style.add('TEXTCOLOR', (col, row), (col, row), "#FFFFFF")
+    style.add('FONTNAME', (col, row), (col, row), 'Helvetica')
 
 def validate_row(m, rules):
     idx = str(m.index)

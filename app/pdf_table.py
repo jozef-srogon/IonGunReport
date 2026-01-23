@@ -7,7 +7,7 @@ from tkinter import messagebox
 
 from app.rules import (get_rules_for, RATIO_RANGE_NEXSA, RATIO_RANGE_ESCALAB, SHIFT_RANGE, RATIO_RANGE_SPEC)
 from app.validation import (validate_row, in_range, apply_red)
-from app.resourcePath import resource_path
+from app.functions import resource_path
 from app.systemConfig import get_system_config
 from app.watermark import draw_image_watermark
 

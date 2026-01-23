@@ -11,7 +11,7 @@ from models.image import Image
 
 from app.pdf_images import export_images_to_pdf
 from app.pdf_table import export_txt_to_pdf
-from app.resourcePath import resource_path
+from app.functions import resource_path, point_in_polygon
 from app.systemConfig import get_system_config
 
 class App(ctk.CTk):
@@ -23,9 +23,9 @@ class App(ctk.CTk):
 
         self.configure(fg_color=self.BG_COLOR)
         self.geometry("1000x700")
-        self.title("Ion Gun data converter")
+        self.title("IONify")
 
-        self.iconbitmap(resource_path("assets/new_icon3.ico"))
+        self.iconbitmap(resource_path("assets/app_icon.ico"))
 
         self.system = []
         self.images = []
@@ -35,8 +35,15 @@ class App(ctk.CTk):
         self.ISS_modes = ctk.BooleanVar(value=False)   # ISS modes for Nexsa
         self.oe_access = ctk.BooleanVar(value=False)   
 
+        self.ORIGINAL_DESIGN_WIDTH = 892
+        self.ORIGINAL_DESIGN_HEIGHT = 501
+
         self._load_images()
         self._create_background()
+
+        self._current_cursor = ""
+        self.bg_label.bind("<Motion>", self.on_motion)
+        self.bg_label.bind("<Leave>", self.on_leave)
 
         self._create_title_area()
         self._create_tooltip()
@@ -110,7 +117,7 @@ class App(ctk.CTk):
             text=(
                 "1. Choose your system type.\n"
                 "2. Click “Run script”.\n"
-                "3. The PDF file will be generated inside the IonGun folder.\n"
+                "3. The PDF files will be generated inside the IonGun folder.\n"
                 "4. Validate and upload it to Final Test."
             ),
             font=ctk.CTkFont(size=12),
@@ -151,7 +158,7 @@ class App(ctk.CTk):
 
         self.default_data_button = ctk.CTkButton(
             button_frame,
-            text="Show default values",
+            text="View Defaults",
             hover_color=self.BG_COLOR_HOVER,
             fg_color="#3A3A3A",
             command=self.open_default_data,
@@ -187,7 +194,7 @@ class App(ctk.CTk):
 
         try:
             default_folder = "C:/AvantageSystem/RampLogs/IonGun"
-            folder_path = default_folder if os.path.isdir(default_folder) else filedialog.askdirectory(title="Select Ion gun Ramp Logs")
+            folder_path = default_folder if os.path.isdir(default_folder) else filedialog.askdirectory(title="Select IonGun folder")
             if not folder_path:
                 return
             self.import_folder_path = folder_path
@@ -311,70 +318,94 @@ class App(ctk.CTk):
             messagebox.showerror("Error", str(e))
 
         return True
-
-    ORIGINAL_DESIGN_WIDTH = 892
-    ORIGINAL_DESIGN_HEIGHT = 501
- 
-    def on_click(self, event):
-        try:
-            scaling = self._get_window_scaling()
-        except AttributeError:
-            scaling = ctk.ThemeManager.theme["scaling"] if "scaling" in ctk.ThemeManager.theme else 1.0
-        cur_x = event.x / scaling
-        cur_y = event.y / scaling
-
-        widget_w = event.widget.winfo_width() / scaling
-        widget_h = event.widget.winfo_height() / scaling
-        img_w = 892
-        img_h = 501
-        offset_x = (widget_w - img_w) / 2
-        offset_y = (widget_h - img_h) / 2
- 
-        if not (offset_x <= cur_x <= offset_x + img_w and 
-                offset_y <= cur_y <= offset_y + img_h):
-            return
- 
-        virtual_x = cur_x - offset_x
-        virtual_y = cur_y - offset_y
-        poly_left = [(0, 501), (369, 501), (468, 0), (0, 0)]
-        poly_right = [(369, 501), (892, 501), (892, 0), (468, 0)]
- 
-        if self.point_in_polygon(virtual_x, virtual_y, poly_left):
-            self.system_var.set(False)
-            self.bg_label.configure(image=self.bg_escalab_img)
-        elif self.point_in_polygon(virtual_x, virtual_y, poly_right):
-            self.system_var.set(True)
-            self.bg_label.configure(image=self.bg_nexsa_img)
-  
-    def point_in_polygon(self, x, y, poly):
-        inside = False
-        n = len(poly)
-        for i in range(n):
-            x1, y1 = poly[i]
-            x2, y2 = poly[(i + 1) % n]
-            if ((y1 > y) != (y2 > y)):
-                xinters = (y - y1) * (x2 - x1) / (y2 - y1) + x1
-                if x < xinters:
-                    inside = not inside
-        return inside
-
+    
     def open_default_data(self):
         try:
-            systemType = get_system_config(self.system_var.get(), self.ionGun_var.get(), self.ISS_modes.get())["type"]
-            print(systemType)
+            systemType = get_system_config(self.system_var.get(), self.ionGun_var.get(), self.ISS_modes.get())["system"]
             pdf_path = resource_path(f"assets/{systemType}.pdf")
 
             if not os.path.isfile(pdf_path):
-                messagebox.showerror(
-                    "File not found",
-                    "Default values PDF could not be found."
-                )
+                messagebox.showerror("File not found", "Default values PDF could not be found.")
                 return
             
             os.startfile(pdf_path)
 
         except Exception as e:
-            messagebox.showerror(
-                "Error",
-                f"Could not open the PDF file:\n{e}"
-            )
+            messagebox.showerror("Error", f"Could not open the PDF file:\n{e}")
+
+    def _hit_test_region(self, event):
+        try:
+            scaling = self._get_window_scaling()
+        except AttributeError:
+            scaling = ctk.ThemeManager.theme.get("scaling", 1.0)
+
+        cur_x = event.x / scaling
+        cur_y = event.y / scaling
+
+        widget_w = event.widget.winfo_width() / scaling
+        widget_h = event.widget.winfo_height() / scaling
+
+        offset_x = (widget_w - self.ORIGINAL_DESIGN_WIDTH) / 2
+        offset_y = (widget_h - self.ORIGINAL_DESIGN_HEIGHT) / 2
+
+        if not (
+            offset_x <= cur_x <= offset_x + self.ORIGINAL_DESIGN_WIDTH and
+            offset_y <= cur_y <= offset_y + self.ORIGINAL_DESIGN_HEIGHT
+        ):
+            return None
+
+        virtual_x = cur_x - offset_x
+        virtual_y = cur_y - offset_y
+
+        poly_left = [
+            (0, self.ORIGINAL_DESIGN_HEIGHT),
+            (369, self.ORIGINAL_DESIGN_HEIGHT),
+            (468, 0),
+            (0, 0),
+        ]
+
+        poly_right = [
+            (369, self.ORIGINAL_DESIGN_HEIGHT),
+            (self.ORIGINAL_DESIGN_WIDTH, self.ORIGINAL_DESIGN_HEIGHT),
+            (self.ORIGINAL_DESIGN_WIDTH, 0),
+            (468, 0),
+        ]
+
+        if point_in_polygon(virtual_x, virtual_y, poly_left):
+            return "left"
+
+        if point_in_polygon(virtual_x, virtual_y, poly_right):
+            return "right"
+
+        return None
+    
+    def on_click(self, event):
+        region = self._hit_test_region(event)
+
+        if region == "left":
+            self.system_var.set(False)
+            self.bg_label.configure(image=self.bg_escalab_img)
+
+        elif region == "right":
+            self.system_var.set(True)
+            self.bg_label.configure(image=self.bg_nexsa_img)
+
+    def on_motion(self, event):
+        region = self._hit_test_region(event)
+
+        if region in ("left", "right"):
+            self._set_cursor("hand2")
+        else:
+            self._set_cursor("arrow")
+
+    def on_leave(self, event):
+        self._set_cursor("arrow")
+
+    def _set_cursor(self, cursor_name):
+        if cursor_name == self._current_cursor:
+            return
+        try:
+            self.bg_label.configure(cursor=cursor_name)
+        except Exception:
+            pass
+        self._current_cursor = cursor_name
