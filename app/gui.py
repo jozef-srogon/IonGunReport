@@ -14,6 +14,10 @@ from app.pdf_table import export_txt_to_pdf
 from app.functions import resource_path, point_in_polygon
 from app.systemConfig import get_system_config
 
+from app.version_utils import get_version
+import threading
+from app.update_check import check_latest
+
 class App(ctk.CTk):
     BG_COLOR = "#2B2B2B"   
     BG_COLOR_HOVER ="#5E5D5D"
@@ -23,7 +27,10 @@ class App(ctk.CTk):
 
         self.configure(fg_color=self.BG_COLOR)
         self.geometry("1000x700")
-        self.title("IONify")
+
+        ver = get_version()
+        print(ver)
+        self.title(F"IONify - v{ver}")
 
         self.iconbitmap(resource_path("assets/app_icon.ico"))
 
@@ -48,6 +55,14 @@ class App(ctk.CTk):
         self._create_title_area()
         self._create_tooltip()
         self._create_buttons()
+        self.after(2000, self.start_update_check)
+
+    def start_update_check(self):
+        threading.Thread(
+            target=check_latest,
+            kwargs={"parent": self},
+            daemon=True
+        ).start()
 
     def _load_ctk_image(self, relpath: str, size: tuple):
         p = resource_path(relpath)

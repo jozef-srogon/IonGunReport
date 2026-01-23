@@ -7,6 +7,7 @@ from PyInstaller.utils.hooks import collect_data_files
 datas = []
 if os.path.isdir("assets"):
     datas.append(("assets", "assets"))
+    datas.append(('VERSION', '.'))
 
 a = Analysis(
     ['main.py'],

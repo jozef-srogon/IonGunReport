@@ -295,9 +295,17 @@
    'C:\\Users\\jozef.srogon\\OneDrive - Thermo Fisher '
    'Scientific\\Desktop\\IonGunConvert\\app\\systemConfig.py',
    'PYMODULE'),
+  ('app.update_check',
+   'C:\\Users\\jozef.srogon\\OneDrive - Thermo Fisher '
+   'Scientific\\Desktop\\IonGunConvert\\app\\update_check.py',
+   'PYMODULE'),
   ('app.validation',
    'C:\\Users\\jozef.srogon\\OneDrive - Thermo Fisher '
    'Scientific\\Desktop\\IonGunConvert\\app\\validation.py',
+   'PYMODULE'),
+  ('app.version_utils',
+   'C:\\Users\\jozef.srogon\\OneDrive - Thermo Fisher '
+   'Scientific\\Desktop\\IonGunConvert\\app\\version_utils.py',
    'PYMODULE'),
   ('app.watermark',
    'C:\\Users\\jozef.srogon\\OneDrive - Thermo Fisher '
