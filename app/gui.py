@@ -18,6 +18,8 @@ from app.version_utils import get_version
 import threading
 from app.update_check import check_latest
 
+from pathlib import Path
+
 class App(ctk.CTk):
     BG_COLOR = "#2B2B2B"   
     BG_COLOR_HOVER ="#5E5D5D"
@@ -36,6 +38,7 @@ class App(ctk.CTk):
         self.system = []
         self.images = []
         self.import_folder_path = ""
+        self.import_file_path = ""
         self.system_var = ctk.BooleanVar(value=False)  # False = Escalab, True = Nexsa
         self.ionGun_var = ctk.BooleanVar(value=False)  # MAGCIS / EX06
         self.ISS_modes = ctk.BooleanVar(value=False)   # ISS modes for Nexsa
@@ -57,10 +60,9 @@ class App(ctk.CTk):
         self.after(2000, self.start_update_check)
 
     def start_update_check(self):
-        # run the update check in a background thread so UI stays responsive
         threading.Thread(
             target=check_latest,
-            kwargs={"parent": self},  # pass parent for messagebox centering
+            kwargs={"parent": self},
             daemon=True
         ).start()
 
@@ -221,15 +223,19 @@ class App(ctk.CTk):
 
             if self.images:
                 export_images_to_pdf(self.images, self.import_folder_path)
-
-            txt_path = os.path.join(folder_path, "BestModeData_V3.txt")
-            if os.path.isfile(txt_path):
-                if self.process_file(txt_path):
-                    self.open_folder()
-                    self.open_button.pack(side="left", padx=5)
-                    self.default_data_button.pack(side="left", padx=5)
-            else:
-                messagebox.showwarning("Warning", "Best Mode Data file not found.")
+            
+            txt_files = [f for f in os.listdir(folder_path) if f.lower().endswith(".txt")]
+            for txt_file in txt_files:
+                self.ionGun_var.set(False)
+                self.ISS_modes.set(False)
+                self.import_file_path = os.path.join(folder_path, txt_file)
+                if os.path.isfile(self.import_file_path):
+                    if self.process_file(self.import_file_path):
+                        self.open_folder()
+                        self.open_button.pack(side="left", padx=5)
+                        self.default_data_button.pack(side="left", padx=5)
+                else:
+                    messagebox.showwarning("Warning", "Best Mode Data file not found.")
 
         except Exception as e:
             messagebox.showerror("Error", str(e))
@@ -240,6 +246,8 @@ class App(ctk.CTk):
                 messagebox.showwarning("Warning", "Folder path is not valid.")
                 return
             os.startfile(self.import_folder_path)
+            txt_path = os.path.join(self.import_folder_path, "BestModeData_V3.pdf")
+            os.startfile(txt_path)
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
@@ -263,32 +271,31 @@ class App(ctk.CTk):
 
                         if parts[0] in ("[14]", "[20]", "[26]", "[32]") and parts[3] == "75":
                             self.ISS_modes.set(True)
-                            self.ionGun_var.set(False)
+                            self.ionGun_var.set(True)
                         elif parts[0] in ("[15]", "[21]", "[27]", "[33]") and parts[3] == "150":
                             self.ISS_modes.set(True)
-                            self.ionGun_var.set(False)
+                            self.ionGun_var.set(True)
                         elif parts[0] in ("[16]", "[22]", "[28]", "[34]") and parts[3] == "300":
                             self.ISS_modes.set(True)
-                            self.ionGun_var.set(False)
+                            self.ionGun_var.set(True)
                         elif parts[0] in ("[17]", "[23]", "[29]", "[35]") and parts[3] == "500":
                             self.ISS_modes.set(True)
-                            self.ionGun_var.set(False)
+                            self.ionGun_var.set(True)
                         elif parts[0] in  ("[18]", "[24]", "[30]", "[36]") and parts[3] == "1000":
                             self.ISS_modes.set(True)
-                            self.ionGun_var.set(False)
+                            self.ionGun_var.set(True)
                         elif parts[0] in  ("[19]", "[25]", "[31]", "[37]") and parts[3] == "2000":
-                            self.ionGun_var.set(False)
+                            self.ionGun_var.set(True)
                             self.ISS_modes.set(True)                     
 
-                        if parts[9] != "0" and parts[12] != "0":
-                            self.ionGun_var.set(False) #EX06
-                        
-                        if parts[3] == "Med":
-                            self.ionGun_var.set(False) #EX06
+                        if parts[9] != "0" and parts[12] != "-0":
+                            self.ionGun_var.set(True)
 
-                        elif parts[20] == "ISS":
+                        if parts[3] == "Med":
+                            self.ionGun_var.set(False)
+                        if parts[20] == "ISS":
                             self.ISS_modes.set(True)
-                        elif parts[20] == "Cluster":
+                        if parts[20] == "Cluster":
                             self.ionGun_var.set(True)
                         else:
                             pass
@@ -318,8 +325,8 @@ class App(ctk.CTk):
                                 specification=parts[21] if len(parts) > 21 else ""
                             )
                         )
-
-            wrong_modes = export_txt_to_pdf(self.system, self.import_folder_path, self.system_var.get(), self.ionGun_var.get(), self.ISS_modes.get(), self.oe_access.get())
+            
+            wrong_modes = export_txt_to_pdf(self.system, self.import_folder_path, self.system_var.get(), self.ionGun_var.get(), self.ISS_modes.get(), self.oe_access.get(), file)
             if wrong_modes is None:
                 return False
             elif wrong_modes != []:
