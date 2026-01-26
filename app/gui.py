@@ -29,7 +29,6 @@ class App(ctk.CTk):
         self.geometry("1000x700")
 
         ver = get_version()
-        print(ver)
         self.title(F"IONify - v{ver}")
 
         self.iconbitmap(resource_path("assets/app_icon.ico"))
