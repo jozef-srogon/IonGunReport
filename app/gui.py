@@ -14,7 +14,6 @@ from app.pdf_table import export_txt_to_pdf
 from app.functions import resource_path, point_in_polygon
 from app.systemConfig import get_system_config
 
-
 class App(ctk.CTk):
     BG_COLOR = "#2B2B2B"   
     BG_COLOR_HOVER ="#5E5D5D"
@@ -51,7 +50,6 @@ class App(ctk.CTk):
         self._create_title_area()
         self._create_tooltip()
         self._create_buttons()
-        self.after(2000, self.start_update_check)
 
     def _load_ctk_image(self, relpath: str, size: tuple):
         p = resource_path(relpath)
@@ -210,22 +208,25 @@ class App(ctk.CTk):
 
             if self.images:
                 export_images_to_pdf(self.images, self.import_folder_path)
-            
-            txt_files = [f for f in os.listdir(folder_path) if f.lower().endswith(".txt")]
-            for txt_file in txt_files:
-                self.ionGun_var.set(False)
-                self.ISS_modes.set(False)
-                self.import_file_path = os.path.join(folder_path, txt_file)
-                if os.path.isfile(self.import_file_path):
-                    if self.process_file(self.import_file_path):
-                        self.open_folder()
-                        self.open_button.pack(side="left", padx=5)
-                        self.default_data_button.pack(side="left", padx=5)
+
+            txt_path = os.path.join(folder_path, "BestModeData_V3.txt")
+            if os.path.isfile(txt_path):
+                if self.process_file(txt_path):
+                    self.open_folder()
+                    self.open_button.pack(side="left", padx=5)
+                    self.default_data_button.pack(side="left", padx=5)
                 else:
                     messagebox.showwarning("Warning", "Best Mode Data file not found.")
 
         except Exception as e:
             messagebox.showerror("Error", str(e))
+
+    def open_file(self):
+        try:
+            txt_path = os.path.join(self.import_folder_path, "BestModeData_V3.pdf")
+            os.startfile(txt_path)
+        except Exception as e:
+            None
 
     def open_folder(self):
         try:
@@ -233,8 +234,6 @@ class App(ctk.CTk):
                 messagebox.showwarning("Warning", "Folder path is not valid.")
                 return
             os.startfile(self.import_folder_path)
-            txt_path = os.path.join(self.import_folder_path, "BestModeData_V3.pdf")
-            os.startfile(txt_path)
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
@@ -313,9 +312,11 @@ class App(ctk.CTk):
                             )
                         )
             
-            wrong_modes = export_txt_to_pdf(self.system, self.import_folder_path, self.system_var.get(), self.ionGun_var.get(), self.ISS_modes.get(), self.oe_access.get(), file)
-            if wrong_modes is None:
+            wrong_modes = export_txt_to_pdf(self.system, self.import_folder_path, self.system_var.get(), self.ionGun_var.get(), self.ISS_modes.get(), self.oe_access.get())
+            if wrong_modes is None:              
                 return False
+            elif wrong_modes == []:
+                self.open_file()
             elif wrong_modes != []:
                 lines = ["Please check values:"]
                 lines += [f"Mode {i[0]}: {i[1]} value" for i in wrong_modes]
